@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import platform
 import sys
@@ -52,8 +53,27 @@ def _read_text_if_exists(path: str) -> Optional[str]:
 def _fmt(v: Any) -> str:
     if v is None:
         return "-"
+    if isinstance(v, bool):
+        return str(v)
+    if isinstance(v, int):
+        return f"{v:,}"
     if isinstance(v, float):
-        return f"{v:.6g}"
+        if not math.isfinite(v):
+            return str(v)
+        if v.is_integer():
+            return f"{int(v):,}"
+        abs_v = abs(v)
+        if abs_v >= 1:
+            s = f"{v:,.6f}".rstrip("0").rstrip(".")
+            return "0" if s == "-0" else s
+        s = f"{v:.12f}".rstrip("0").rstrip(".")
+        if s in {"", "-0"}:
+            return "0"
+        return s
+    if isinstance(v, dict):
+        return "{" + ", ".join(f"{k}: {_fmt(val)}" for k, val in v.items()) + "}"
+    if isinstance(v, (list, tuple, set)):
+        return "[" + ", ".join(_fmt(x) for x in v) + "]"
     return str(v)
 
 
@@ -81,12 +101,136 @@ def _fsize(path: str) -> Optional[str]:
     except Exception:
         return None
     if n < 1024:
-        return f"{n} B"
+        return f"{n:,} B"
     if n < 1024 * 1024:
-        return f"{n / 1024:.1f} KB"
+        return f"{n / 1024:,.1f} KB"
     if n < 1024 * 1024 * 1024:
-        return f"{n / (1024 * 1024):.1f} MB"
-    return f"{n / (1024 * 1024 * 1024):.2f} GB"
+        return f"{n / (1024 * 1024):,.1f} MB"
+    return f"{n / (1024 * 1024 * 1024):,.2f} GB"
+
+
+def _format_param_count(n: Optional[int]) -> str:
+    if n is None:
+        return "-"
+    raw = f"{int(n):,}"
+    val = float(n)
+    if val >= 1_000_000_000:
+        short = f"{val / 1_000_000_000:.2f}B"
+    elif val >= 1_000_000:
+        short = f"{val / 1_000_000:.2f}M"
+    elif val >= 1_000:
+        short = f"{val / 1_000:.2f}K"
+    else:
+        short = str(int(n))
+    return f"{raw} ({short})"
+
+
+def _numel_from_shape(shape: Any) -> int:
+    n = 1
+    for d in shape or []:
+        n *= int(d)
+    return int(n)
+
+
+def _safetensors_param_count(path: str) -> Optional[int]:
+    if not path or not os.path.exists(path):
+        return None
+    try:
+        from safetensors import safe_open  # type: ignore
+
+        total = 0
+        with safe_open(path, framework="pt", device="cpu") as f:
+            for key in f.keys():
+                try:
+                    shape = f.get_slice(key).get_shape()
+                    total += _numel_from_shape(shape)
+                except Exception:
+                    tensor = f.get_tensor(key)
+                    total += int(getattr(tensor, "numel", lambda: 0)())
+        return total
+    except Exception:
+        return None
+
+
+def _estimate_llama_param_count_from_config(config: Dict[str, Any]) -> Optional[int]:
+    try:
+        vocab_size = int(config.get("vocab_size"))
+        hidden_size = int(config.get("hidden_size"))
+        intermediate_size = int(config.get("intermediate_size"))
+        num_hidden_layers = int(config.get("num_hidden_layers"))
+        num_attention_heads = int(config.get("num_attention_heads"))
+        num_key_value_heads = int(config.get("num_key_value_heads", num_attention_heads))
+    except Exception:
+        return None
+
+    if num_attention_heads <= 0 or hidden_size <= 0 or num_hidden_layers <= 0:
+        return None
+
+    if hidden_size % num_attention_heads == 0:
+        head_dim = hidden_size // num_attention_heads
+    else:
+        head_dim = None
+
+    # Llama-style attention/MLP layout with optional bias terms.
+    q_proj = hidden_size * hidden_size
+    if head_dim is not None:
+        kv_dim = num_key_value_heads * head_dim
+        k_proj = hidden_size * kv_dim
+        v_proj = hidden_size * kv_dim
+    else:
+        k_proj = hidden_size * hidden_size
+        v_proj = hidden_size * hidden_size
+        kv_dim = hidden_size
+    o_proj = hidden_size * hidden_size
+    attn = q_proj + k_proj + v_proj + o_proj
+    mlp = (hidden_size * intermediate_size) * 3  # gate, up, down
+    norms = hidden_size * 2  # input + post_attention
+    per_layer = attn + mlp + norms
+
+    attention_bias = bool(config.get("attention_bias", False))
+    if attention_bias:
+        per_layer += (hidden_size * 2) + (kv_dim * 2)  # q,o + k,v biases
+
+    mlp_bias = bool(config.get("mlp_bias", False))
+    if mlp_bias:
+        per_layer += (intermediate_size * 2) + hidden_size  # gate,up,down biases
+
+    embed = vocab_size * hidden_size
+    final_norm = hidden_size
+    tie_word_embeddings = bool(config.get("tie_word_embeddings", False))
+    lm_head = 0 if tie_word_embeddings else (hidden_size * vocab_size)
+
+    return int(embed + (num_hidden_layers * per_layer) + final_norm + lm_head)
+
+
+def _model_param_count(model_dir: str, config: Dict[str, Any]) -> Tuple[Optional[int], str]:
+    model_dir_abs = os.path.abspath(model_dir)
+    single = os.path.join(model_dir_abs, "model.safetensors")
+    n = _safetensors_param_count(single)
+    if n is not None:
+        return n, "model.safetensors"
+
+    index_path = os.path.join(model_dir_abs, "model.safetensors.index.json")
+    index = _read_json_if_exists(index_path) or {}
+    weight_map = index.get("weight_map", {}) if isinstance(index, dict) else {}
+    if isinstance(weight_map, dict) and weight_map:
+        shard_files = sorted({str(v) for v in weight_map.values() if str(v).strip()})
+        total = 0
+        used = 0
+        for shard in shard_files:
+            shard_path = os.path.join(model_dir_abs, shard)
+            s = _safetensors_param_count(shard_path)
+            if s is None:
+                continue
+            total += s
+            used += 1
+        if used > 0:
+            return total, f"model.safetensors shards ({used})"
+
+    est = _estimate_llama_param_count_from_config(config)
+    if est is not None:
+        return est, "config_estimate"
+    return None, "-"
 
 
 def _top_k(d: Dict[str, Any], k: int = 12) -> Tuple[list[tuple[str, Any]], int]:
@@ -209,6 +353,9 @@ def build_dashboard_html(
     dist = _read_json_if_exists(dist_json_path) or {}
     config = _read_json_if_exists(config_path) or {}
     run_meta = _read_json_if_exists(run_meta_path) or {}
+
+    param_target_model_dir = source_run_model_dir if source_run_model_dir and os.path.isdir(source_run_model_dir) else model_dir_abs
+    param_count, param_count_source = _model_param_count(param_target_model_dir, config if isinstance(config, dict) else {})
 
     summary = (training_result or {}).get("summary", {}) if isinstance(training_result, dict) else {}
     rc = reason_coverage.get("reason_coverage", {}) if isinstance(reason_coverage, dict) else {}
@@ -345,7 +492,10 @@ def build_dashboard_html(
     config_card = _render_kv_table(
         "모델 구성 (config/run_meta)",
         [
-            ("config.model_type", config.get("model_type")),
+            ("selected_run_id", live_run_id),
+            ("selected_run.parameter_count", _format_param_count(param_count)),
+            ("selected_run.parameter_count_source", param_count_source),
+            ("selected_run.model_dir", param_target_model_dir),
             ("config.vocab_size", config.get("vocab_size")),
             ("config.hidden_size", config.get("hidden_size")),
             ("config.intermediate_size", config.get("intermediate_size")),

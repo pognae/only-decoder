@@ -1,4 +1,5 @@
 import json
+import math
 import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -30,8 +31,27 @@ def _mtime(path: str) -> str:
 def _fmt(v: Any) -> str:
     if v is None:
         return "-"
+    if isinstance(v, bool):
+        return str(v)
+    if isinstance(v, int):
+        return f"{v:,}"
     if isinstance(v, float):
-        return f"{v:.6g}"
+        if not math.isfinite(v):
+            return str(v)
+        if v.is_integer():
+            return f"{int(v):,}"
+        abs_v = abs(v)
+        if abs_v >= 1:
+            s = f"{v:,.6f}".rstrip("0").rstrip(".")
+            return "0" if s == "-0" else s
+        s = f"{v:.12f}".rstrip("0").rstrip(".")
+        if s in {"", "-0"}:
+            return "0"
+        return s
+    if isinstance(v, dict):
+        return "{" + ", ".join(f"{k}: {_fmt(val)}" for k, val in v.items()) + "}"
+    if isinstance(v, (list, tuple, set)):
+        return "[" + ", ".join(_fmt(x) for x in v) + "]"
     return str(v)
 
 

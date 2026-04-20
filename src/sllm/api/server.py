@@ -2,6 +2,7 @@ import os
 import subprocess
 import shutil
 import sys
+import math
 import time
 from datetime import datetime
 from typing import Dict, Optional, Tuple
@@ -685,6 +686,21 @@ def playground():
         const runMeta = document.getElementById('runMeta');
         const preferredRunId = new URLSearchParams(location.search).get('run_id');
 
+        function formatUiNumber(v, maxFrac = 6) {{
+          const n = Number(v);
+          if (!Number.isFinite(n)) return String(v);
+          if (Number.isInteger(n)) return n.toLocaleString('ko-KR');
+          return n.toLocaleString('ko-KR', {{ maximumFractionDigits: maxFrac }});
+        }}
+
+        function formatUiValue(v) {{
+          if (v === null || v === undefined || v === '') return '-';
+          if (typeof v === 'number') return formatUiNumber(v);
+          const n = Number(v);
+          if (Number.isFinite(n)) return formatUiNumber(n);
+          return String(v);
+        }}
+
         async function loadRuns() {{
           const r = await fetch('/runs/list');
           const j = await r.json();
@@ -697,7 +713,7 @@ def playground():
             const o = document.createElement('option');
             o.value = x.run_id;
             const live = x.is_current ? ' [LIVE]' : '';
-            o.textContent = `${{x.label}}${{live}} (acc=${{x.command_accuracy ?? '-'}}, quality=${{x.quality_status ?? '-'}})`;
+            o.textContent = `${{x.label}}${{live}} (acc=${{formatUiValue(x.command_accuracy)}}, quality=${{x.quality_status ?? '-'}})`;
             runId.appendChild(o);
           }}
           const existsPreferred = preferredRunId && rows.some(x => x.run_id === preferredRunId);
@@ -945,8 +961,27 @@ def _escape_html(text: str) -> str:
 def _fmt(v) -> str:
     if v is None:
         return "-"
+    if isinstance(v, bool):
+        return str(v)
+    if isinstance(v, int):
+        return f"{v:,}"
     if isinstance(v, float):
-        return f"{v:.6g}"
+        if not math.isfinite(v):
+            return str(v)
+        if v.is_integer():
+            return f"{int(v):,}"
+        abs_v = abs(v)
+        if abs_v >= 1:
+            s = f"{v:,.6f}".rstrip("0").rstrip(".")
+            return "0" if s == "-0" else s
+        s = f"{v:.12f}".rstrip("0").rstrip(".")
+        if s in {"", "-0"}:
+            return "0"
+        return s
+    if isinstance(v, dict):
+        return "{" + ", ".join(f"{k}: {_fmt(val)}" for k, val in v.items()) + "}"
+    if isinstance(v, (list, tuple, set)):
+        return "[" + ", ".join(_fmt(x) for x in v) + "]"
     return str(v)
 
 
@@ -1593,6 +1628,21 @@ def release_page():
         let rows = [];
         let currentRunId = null;
 
+        function formatUiNumber(v, maxFrac = 6) {
+          const n = Number(v);
+          if (!Number.isFinite(n)) return String(v);
+          if (Number.isInteger(n)) return n.toLocaleString('ko-KR');
+          return n.toLocaleString('ko-KR', { maximumFractionDigits: maxFrac });
+        }
+
+        function formatUiValue(v) {
+          if (v === null || v === undefined || v === '') return '-';
+          if (typeof v === 'number') return formatUiNumber(v);
+          const n = Number(v);
+          if (Number.isFinite(n)) return formatUiNumber(n);
+          return String(v);
+        }
+
         function selectedRunId() {
           return (runId.value || '').trim();
         }
@@ -1624,7 +1674,7 @@ make finalize FINALIZE_RUN_ID=${rid}
             return;
           }
           const live = row.is_current ? 'LIVE' : 'not-live';
-          runMeta.textContent = `exists=${row.exists} | quality=${row.quality_status ?? '-'} | acc=${row.command_accuracy ?? '-'} | ${live} | model_dir=${row.model_dir}`;
+          runMeta.textContent = `exists=${row.exists} | quality=${row.quality_status ?? '-'} | acc=${formatUiValue(row.command_accuracy)} | ${live} | model_dir=${row.model_dir}`;
           refreshCmdPreview();
         }
 
@@ -1638,7 +1688,7 @@ make finalize FINALIZE_RUN_ID=${rid}
             const o = document.createElement('option');
             o.value = x.run_id;
             const live = x.is_current ? ' [LIVE]' : '';
-            o.textContent = `${x.label}${live} (exists=${x.exists}, acc=${x.command_accuracy ?? '-'}, quality=${x.quality_status ?? '-'})`;
+            o.textContent = `${x.label}${live} (exists=${x.exists}, acc=${formatUiValue(x.command_accuracy)}, quality=${x.quality_status ?? '-'})`;
             runId.appendChild(o);
           }
           const nonDefault = rows.find(x => x.run_id !== '__default__' && x.exists);
@@ -1793,7 +1843,7 @@ def wizard_page():
         acc = row.get("command_accuracy")
         quality = row.get("quality_status")
         selected_attr = " selected" if rid == selected_run_id else ""
-        text = f"{label}{live} (exists={exists}, acc={acc}, quality={quality})"
+        text = f"{label}{live} (exists={exists}, acc={_fmt(acc)}, quality={quality})"
         option_rows.append(
             f'<option value="{_escape_html(rid)}"{selected_attr}>{_escape_html(text)}</option>'
         )
@@ -2240,6 +2290,21 @@ def wizard_page():
         const deleteStatus = document.getElementById('deleteStatus');
         const deleteOut = document.getElementById('deleteOut');
 
+        function formatUiNumber(v, maxFrac = 6) {
+          const n = Number(v);
+          if (!Number.isFinite(n)) return String(v);
+          if (Number.isInteger(n)) return n.toLocaleString('ko-KR');
+          return n.toLocaleString('ko-KR', { maximumFractionDigits: maxFrac });
+        }
+
+        function formatUiValue(v) {
+          if (v === null || v === undefined || v === '') return '-';
+          if (typeof v === 'number') return formatUiNumber(v);
+          const n = Number(v);
+          if (Number.isFinite(n)) return formatUiNumber(n);
+          return String(v);
+        }
+
         function makeDefaultRunId() {
           const now = new Date();
           const pad2 = (n) => String(n).padStart(2, '0');
@@ -2295,7 +2360,7 @@ def wizard_page():
           const row = rowsCache.find(x => x.run_id === rid);
           if (row) {
             const live = row.is_current ? 'LIVE' : 'not-live';
-            runMeta.textContent = `exists=${row.exists} | quality=${row.quality_status ?? '-'} | acc=${row.command_accuracy ?? '-'} | ${live} | model_dir=${row.model_dir}`;
+            runMeta.textContent = `exists=${row.exists} | quality=${row.quality_status ?? '-'} | acc=${formatUiValue(row.command_accuracy)} | ${live} | model_dir=${row.model_dir}`;
           } else {
             runMeta.textContent = rid ? `run_id=${rid}` : '-';
           }
@@ -2367,7 +2432,7 @@ def wizard_page():
             o.value = row.run_id;
             const live = row.is_current ? ' [LIVE]' : '';
             const label = row.label || row.run_id || 'run';
-            o.textContent = `${label}${live} (exists=${row.exists}, acc=${row.command_accuracy ?? '-'}, quality=${row.quality_status ?? '-'})`;
+            o.textContent = `${label}${live} (exists=${row.exists}, acc=${formatUiValue(row.command_accuracy)}, quality=${row.quality_status ?? '-'})`;
             runSelect.appendChild(o);
           }
 
@@ -2408,8 +2473,8 @@ def wizard_page():
           if (v === null || v === undefined || v === '') return '-';
           const n = Number(v);
           if (!Number.isFinite(n)) return String(v);
-          if (Math.abs(n) >= 1000 || (Math.abs(n) > 0 && Math.abs(n) < 0.001)) return n.toExponential(3);
-          return n.toFixed(6).replace(/\\.?0+$/, '');
+          if (Number.isInteger(n)) return n.toLocaleString('ko-KR');
+          return n.toLocaleString('ko-KR', { maximumFractionDigits: 6 });
         }
 
         function parsePythonDictLine(line) {
@@ -2607,7 +2672,7 @@ def wizard_page():
             const prog = parseProgressLine(line);
             if (prog) {
               if (Number.isFinite(prog.percent) && Number.isFinite(prog.current) && Number.isFinite(prog.total)) {
-                trainProgressText.textContent = `${prog.percent}% (${prog.current}/${prog.total})`;
+                trainProgressText.textContent = `${formatUiNumber(prog.percent)}% (${formatUiNumber(prog.current)}/${formatUiNumber(prog.total)})`;
               }
               return;
             }
@@ -3616,11 +3681,23 @@ def run_files(run_id: str, name: str):
 @app.get("/commands")
 def commands_page():
     commands = load_commands(COMMANDS_PATH)
+    def _aliases_csv(row: dict) -> str:
+        return ", ".join(str(x).strip() for x in (row.get("aliases", []) or []) if str(x).strip())
+
     rows = "\n".join(
-        f"<tr><td><code>{c.get('command')}</code></td>"
-        f"<td>{c.get('reason_template','')}</td>"
-        f"<td>{', '.join(c.get('aliases', []) or [])}</td>"
-        f"<td><button onclick=\"deleteCmd('{c.get('command')}')\">delete</button></td></tr>"
+        "<tr>"
+        f"<td><code>{_escape_html(str(c.get('command', '')))}</code></td>"
+        f"<td>{_escape_html(str(c.get('reason_template', '')))}</td>"
+        f"<td>{_escape_html(_aliases_csv(c))}</td>"
+        "<td>"
+        "<div class='row-actions'>"
+        f"<button type='button' class='editBtn' data-command=\"{_escape_html(str(c.get('command', '')))}\" "
+        f"data-reason-template=\"{_escape_html(str(c.get('reason_template', '')))}\" "
+        f"data-aliases-csv=\"{_escape_html(_aliases_csv(c))}\">edit</button>"
+        f"<button type='button' class='deleteBtn' data-command=\"{_escape_html(str(c.get('command', '')))}\">delete</button>"
+        "</div>"
+        "</td>"
+        "</tr>"
         for c in commands
     )
     html = f"""
@@ -3638,6 +3715,8 @@ def commands_page():
         code {{ background:#f6f6f6; padding: 2px 4px; border-radius: 4px; }}
         input {{ width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 8px; }}
         .muted {{ color:#666; }}
+        .row-actions {{ display:flex; gap:6px; flex-wrap:wrap; }}
+        button.secondary {{ background:#fff; border:1px solid #ddd; }}
       </style>
     </head>
     <body>
@@ -3656,21 +3735,26 @@ def commands_page():
       <div class="card">
         <h3 style="margin:0 0 10px 0">Command 추가/수정</h3>
         <form id="upsertForm">
+          <input type="hidden" name="original_command" value="" />
+          <div id="formMode" class="muted" style="margin-bottom:8px;">신규 추가 모드</div>
           <label>command (UPPER_SNAKE_CASE)</label>
           <input name="command" placeholder="TOP_IP_BY_PAGE" required />
           <label>reason_template</label>
           <input name="reason_template" placeholder="identify the most frequent IP for the requested page" required />
           <label>aliases (comma separated)</label>
           <input name="aliases_csv" placeholder="top ip by page, most viewed ip" />
-          <button type="submit">save</button>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="saveBtn" type="submit">save</button>
+            <button id="cancelEdit" type="button" class="secondary" hidden>cancel edit</button>
+          </div>
         </form>
         <pre id="result"></pre>
       </div>
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h3 style="margin:0 0 10px 0">현재 Command 목록 ({len(commands)}개)</h3>
-          <button onclick="resetDefaults()">reset default 8</button>
+          <h3 style="margin:0 0 10px 0">현재 Command 목록 ({len(commands):,}개)</h3>
+          <button id="resetDefaultsBtn" type="button">reset default 8</button>
         </div>
         <table>
           <thead><tr><th>command</th><th>reason_template</th><th>aliases</th><th></th></tr></thead>
@@ -3680,23 +3764,64 @@ def commands_page():
 
       <script>
         const result = document.getElementById('result');
-        document.getElementById('upsertForm').addEventListener('submit', async (e) => {{
+        const form = document.getElementById('upsertForm');
+        const formMode = document.getElementById('formMode');
+        const saveBtn = document.getElementById('saveBtn');
+        const cancelEdit = document.getElementById('cancelEdit');
+        const originalCommandInput = form.elements.original_command;
+        const commandInput = form.elements.command;
+        const reasonInput = form.elements.reason_template;
+        const aliasesInput = form.elements.aliases_csv;
+
+        function setCreateMode() {{
+          originalCommandInput.value = '';
+          formMode.textContent = '신규 추가 모드';
+          saveBtn.textContent = 'save';
+          cancelEdit.hidden = true;
+        }}
+
+        function setEditMode(command, reasonTemplate, aliasesCsv) {{
+          originalCommandInput.value = command || '';
+          commandInput.value = command || '';
+          reasonInput.value = reasonTemplate || '';
+          aliasesInput.value = aliasesCsv || '';
+          formMode.textContent = `수정 모드: ${{command || '-'}}`;
+          saveBtn.textContent = 'update';
+          cancelEdit.hidden = false;
+          commandInput.focus();
+        }}
+
+        form.addEventListener('submit', async (e) => {{
           e.preventDefault();
-          const fd = new FormData(e.target);
+          const fd = new FormData(form);
           const r = await fetch('/commands/upsert', {{ method: 'POST', body: fd }});
           const j = await r.json();
           result.textContent = JSON.stringify(j, null, 2);
           if (j.ok) location.reload();
         }});
+        cancelEdit.addEventListener('click', () => setCreateMode());
 
-        async function deleteCmd(command) {{
-          if (!confirm(`delete ${{command}} ?`)) return;
-          const fd = new FormData();
-          fd.append('command', command);
-          const r = await fetch('/commands/delete', {{ method: 'POST', body: fd }});
-          const j = await r.json();
-          result.textContent = JSON.stringify(j, null, 2);
-          if (j.ok) location.reload();
+        for (const btn of document.querySelectorAll('.editBtn')) {{
+          btn.addEventListener('click', () => {{
+            setEditMode(
+              btn.dataset.command || '',
+              btn.dataset.reasonTemplate || '',
+              btn.dataset.aliasesCsv || ''
+            );
+          }});
+        }}
+
+        for (const btn of document.querySelectorAll('.deleteBtn')) {{
+          btn.addEventListener('click', async () => {{
+            const command = btn.dataset.command || '';
+            if (!confirm(`delete ${{command}} ?`)) return;
+            const fd = new FormData();
+            fd.append('command', command);
+            const r = await fetch('/commands/delete', {{ method: 'POST', body: fd }});
+            const j = await r.json();
+            result.textContent = JSON.stringify(j, null, 2);
+            if (j.ok) location.reload();
+          }});
         }}
 
         async function resetDefaults() {{
@@ -3706,6 +3831,8 @@ def commands_page():
           result.textContent = JSON.stringify(j, null, 2);
           if (j.ok) location.reload();
         }}
+        document.getElementById('resetDefaultsBtn').addEventListener('click', resetDefaults);
+        setCreateMode();
       </script>
     </body>
     </html>
@@ -3721,6 +3848,7 @@ def commands_list():
 @app.post("/commands/upsert")
 def commands_upsert(
     command: str = Form(...),
+    original_command: Optional[str] = Form(None),
     reason_template: str = Form(""),
     aliases_csv: str = Form(""),
 ):
@@ -3731,17 +3859,41 @@ def commands_upsert(
         "reason_template": reason_template,
         "aliases": aliases,
     }
+    original_upper = (original_command or "").strip().upper()
     cmd_upper = command.strip().upper()
-    updated = False
+
+    original_index = None
+    command_index = None
     for i, row in enumerate(rows):
-        if str(row.get("command", "")).upper() == cmd_upper:
-            rows[i] = entry
-            updated = True
-            break
-    if not updated:
+        row_cmd = str(row.get("command", "")).upper()
+        if original_upper and row_cmd == original_upper and original_index is None:
+            original_index = i
+        if row_cmd == cmd_upper and command_index is None:
+            command_index = i
+
+    updated = False
+    merged = False
+    if original_index is not None:
+        if command_index is not None and command_index != original_index:
+            rows[command_index] = entry
+            del rows[original_index]
+            merged = True
+        else:
+            rows[original_index] = entry
+        updated = True
+    elif command_index is not None:
+        rows[command_index] = entry
+        updated = True
+    else:
         rows.append(entry)
     save_commands(COMMANDS_PATH, rows)
-    return {"ok": True, "updated": updated, "saved_path": COMMANDS_PATH, "count": len(load_commands(COMMANDS_PATH))}
+    return {
+        "ok": True,
+        "updated": updated,
+        "merged": merged,
+        "saved_path": COMMANDS_PATH,
+        "count": len(load_commands(COMMANDS_PATH)),
+    }
 
 
 @app.post("/commands/delete")
