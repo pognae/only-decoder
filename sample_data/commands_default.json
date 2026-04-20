@@ -1,0 +1,42 @@
+[
+  {
+    "command": "USER_BY_LOGIN",
+    "reason_template": "access status by user id",
+    "aliases": ["access status by user id", "user login history", "login access check"]
+  },
+  {
+    "command": "TOP_IP_BY_PAGE",
+    "reason_template": "identify the most frequent IP for the requested page",
+    "aliases": ["top ip by page", "most viewed ip", "highest-frequency ip"]
+  },
+  {
+    "command": "DELIVERY_VEHICLE",
+    "reason_template": "vehicle operation detection",
+    "aliases": ["vehicle operation detection", "delivery vehicle status", "vehicle dispatch status"]
+  },
+  {
+    "command": "RESYNC_ORDER",
+    "reason_template": "legacy OMS sync exception",
+    "aliases": ["order resync", "resync order", "sync failure recovery"]
+  },
+  {
+    "command": "UPDATE_LOCATION",
+    "reason_template": "location mapping invalid",
+    "aliases": ["update location", "fix location mapping", "invalid picking location"]
+  },
+  {
+    "command": "SYNC_INVENTORY",
+    "reason_template": "stock quantity inconsistency detected",
+    "aliases": ["sync inventory", "inventory mismatch", "stock inconsistency"]
+  },
+  {
+    "command": "RESCHEDULE_SHIPMENT",
+    "reason_template": "carrier schedule exception detected",
+    "aliases": ["reschedule shipment", "shipment delayed", "carrier schedule issue"]
+  },
+  {
+    "command": "NO_ACTION",
+    "reason_template": "no action required based on current input",
+    "aliases": ["no action", "unknown", "none"]
+  }
+]

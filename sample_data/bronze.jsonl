@@ -1,0 +1,3 @@
+{"record_id":"B-3001","domain":"oms","system":"OMS","message":"User with idadmin access to ip172.30.1.37and checked the/sy/dashboard","create_date":"2026-04-09 10:31:42","state":"PAGE"}
+{"record_id":"B-3002","domain":"oms","system":"OMS","message":"Top IP for /dw/main/mainPageSD in last 24h?","create_date":"2026-04-09 10:52:18","state":"QUERY"}
+{"record_id":"B-3003","domain":"oms","system":"OMS","message":"Which IP has seen the mainPageSD page the most?","create_date":"2026-04-09 11:01:07","state":"QUERY"}

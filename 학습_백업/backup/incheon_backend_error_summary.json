@@ -1,0 +1,29 @@
+{
+  "source_file": "/Users/rms/Downloads/260413_시스템 로그/인천_Backend_Error.log",
+  "generated_at": "2026-04-13T18:26:42",
+  "total_log_lines": 12700,
+  "total_event_rows": 1339,
+  "dedup_rows": 6,
+  "command_distribution": {
+    "CHECK_DATA_COLLECTION": 451,
+    "SKIP_DB_INSERT": 452,
+    "FIX_SQL_SYNTAX": 432,
+    "RESTORE_DB_CONNECTION": 4
+  },
+  "error_type_distribution": {
+    "NO_DATA_FOR_PERIOD": 451,
+    "EMPTY_VALUES_SKIP_INSERT": 452,
+    "SQL_PARSE_ERROR": 432,
+    "DB_CONNECTION_REFUSED": 4
+  },
+  "state_distribution": {
+    "ERROR": 887,
+    "WARNING": 452
+  },
+  "outputs": {
+    "full_dataset": "train_data/incheon_backend_error_train.jsonl",
+    "dedup_dataset": "train_data/incheon_backend_error_train_dedup.jsonl",
+    "error_only_dataset": "train_data/incheon_backend_error_only_train.jsonl"
+  },
+  "error_only_rows": 887
+}

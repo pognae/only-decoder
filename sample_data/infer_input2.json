@@ -1,0 +1,8 @@
+{
+  "record_id": "90001",
+  "system": "MES01",
+  "message": "temperature deviation detected",
+  "equipment_id": "EQ-12",
+  "batch_id": "B-1120",
+  "domain": "mes"
+}

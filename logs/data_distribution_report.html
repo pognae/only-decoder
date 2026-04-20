@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Data Distribution Report</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 20px;
+      color: #222;
+      background: #f7fafc;
+    }
+    h1 { margin: 0 0 6px 0; }
+    .sub { color: #4a5568; margin-bottom: 16px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .meta { color: #4a5568; margin: 0 0 12px 0; }
+    .chart { margin-bottom: 18px; }
+    .row {
+      display: grid;
+      grid-template-columns: 180px 1fr 60px;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0;
+    }
+    .label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 12px;
+      color: #2d3748;
+    }
+    .bar-wrap {
+      background: #edf2f7;
+      border-radius: 4px;
+      height: 12px;
+      overflow: hidden;
+    }
+    .bar {
+      background: linear-gradient(90deg, #2b6cb0, #2c5282);
+      height: 12px;
+    }
+    .value {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      color: #2d3748;
+    }
+    .empty { color: #718096; }
+  </style>
+</head>
+<body>
+  <h1>Data Distribution Report</h1>
+  <div class="sub">train_file=/Users/rms/work/GitHub/only-decoder/train_data/train.jsonl | valid_file=/Users/rms/work/GitHub/only-decoder/train_data/valid.jsonl</div>
+  <div class="grid">
+    <section class='card'><h2>TRAIN</h2><p class='meta'>rows=97431 | labeled_rows=97431</p><h3>Command</h3><div class='chart'><div class='row'><div class='label'>USER_BY_LOGIN</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>56594</div></div>
+<div class='row'><div class='label'>DELIVERY_VEHICLE</div><div class='bar-wrap'><div class='bar' style='width:70%;'></div></div><div class='value'>40037</div></div>
+<div class='row'><div class='label'>TOP_IP_BY_PAGE</div><div class='bar-wrap'><div class='bar' style='width:1%;'></div></div><div class='value'>800</div></div></div><h3>System</h3><div class='chart'><div class='row'><div class='label'>OMS</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>57394</div></div>
+<div class='row'><div class='label'>TMS</div><div class='bar-wrap'><div class='bar' style='width:69%;'></div></div><div class='value'>40037</div></div></div><h3>State</h3><div class='chart'><div class='row'><div class='label'>PAGE</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>47937</div></div>
+<div class='row'><div class='label'>done</div><div class='bar-wrap'><div class='bar' style='width:80%;'></div></div><div class='value'>38486</div></div>
+<div class='row'><div class='label'>LOGIN</div><div class='bar-wrap'><div class='bar' style='width:18%;'></div></div><div class='value'>8657</div></div>
+<div class='row'><div class='label'>QUERY</div><div class='bar-wrap'><div class='bar' style='width:3%;'></div></div><div class='value'>1729</div></div>
+<div class='row'><div class='label'>EVENT</div><div class='bar-wrap'><div class='bar' style='width:1%;'></div></div><div class='value'>600</div></div>
+<div class='row'><div class='label'>ready</div><div class='bar-wrap'><div class='bar' style='width:0%;'></div></div><div class='value'>12</div></div>
+<div class='row'><div class='label'>running</div><div class='bar-wrap'><div class='bar' style='width:0%;'></div></div><div class='value'>10</div></div></div><h3>Domain</h3><div class='chart'><div class='row'><div class='label'>oms</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>1700</div></div>
+<div class='row'><div class='label'>transportation</div><div class='bar-wrap'><div class='bar' style='width:89%;'></div></div><div class='value'>1529</div></div></div><h3>Message Length Bucket</h3><div class='chart'><div class='row'><div class='label'>0-19</div><div class='bar-wrap'><div class='bar' style='width:66%;'></div></div><div class='value'>38508</div></div>
+<div class='row'><div class='label'>100-199</div><div class='bar-wrap'><div class='bar' style='width:1%;'></div></div><div class='value'>604</div></div>
+<div class='row'><div class='label'>20-49</div><div class='bar-wrap'><div class='bar' style='width:0%;'></div></div><div class='value'>162</div></div>
+<div class='row'><div class='label'>50-99</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>58157</div></div></div></section>
+    <section class='card'><h2>VALID</h2><p class='meta'>rows=630 | labeled_rows=630</p><h3>Command</h3><div class='chart'><div class='row'><div class='label'>DELIVERY_VEHICLE</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>519</div></div>
+<div class='row'><div class='label'>USER_BY_LOGIN</div><div class='bar-wrap'><div class='bar' style='width:21%;'></div></div><div class='value'>111</div></div></div><h3>System</h3><div class='chart'><div class='row'><div class='label'>TMS</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>519</div></div>
+<div class='row'><div class='label'>OMS</div><div class='bar-wrap'><div class='bar' style='width:21%;'></div></div><div class='value'>111</div></div></div><h3>State</h3><div class='chart'><div class='row'><div class='label'>done</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>413</div></div>
+<div class='row'><div class='label'>QUERY</div><div class='bar-wrap'><div class='bar' style='width:23%;'></div></div><div class='value'>95</div></div>
+<div class='row'><div class='label'>PAGE</div><div class='bar-wrap'><div class='bar' style='width:15%;'></div></div><div class='value'>66</div></div>
+<div class='row'><div class='label'>LOGIN</div><div class='bar-wrap'><div class='bar' style='width:10%;'></div></div><div class='value'>45</div></div>
+<div class='row'><div class='label'>running</div><div class='bar-wrap'><div class='bar' style='width:2%;'></div></div><div class='value'>9</div></div>
+<div class='row'><div class='label'>ready</div><div class='bar-wrap'><div class='bar' style='width:0%;'></div></div><div class='value'>2</div></div></div><h3>Domain</h3><div class='chart'><div class='row'><div class='label'>transportation</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>95</div></div></div><h3>Message Length Bucket</h3><div class='chart'><div class='row'><div class='label'>0-19</div><div class='bar-wrap'><div class='bar' style='width:100%;'></div></div><div class='value'>424</div></div>
+<div class='row'><div class='label'>20-49</div><div class='bar-wrap'><div class='bar' style='width:5%;'></div></div><div class='value'>22</div></div>
+<div class='row'><div class='label'>50-99</div><div class='bar-wrap'><div class='bar' style='width:43%;'></div></div><div class='value'>184</div></div></div></section>
+  </div>
+</body>
+</html>

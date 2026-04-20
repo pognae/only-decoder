@@ -1,0 +1,12 @@
+torch
+transformers
+datasets
+tokenizers
+accelerate
+fastapi
+uvicorn
+python-multipart
+pydantic
+pyyaml
+sentencepiece
+tiktoken

@@ -1,0 +1,24 @@
+model:
+  vocab_size: 32000
+  hidden_size: 2048
+  intermediate_size: 5632
+  num_hidden_layers: 16
+  num_attention_heads: 16
+  num_key_value_heads: 4
+  max_position_embeddings: 2048
+  bos_token_id: 1
+  eos_token_id: 2
+  pad_token_id: 0
+
+training:
+  max_length: 1024
+  learning_rate: 2.0e-4
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 32
+  logging_steps: 20
+  save_steps: 500
+  eval_steps: 500
+  warmup_ratio: 0.03
+  weight_decay: 0.01

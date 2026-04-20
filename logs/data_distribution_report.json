@@ -1,0 +1,64 @@
+{
+  "train_file": "/Users/rms/work/GitHub/only-decoder/train_data/train.jsonl",
+  "valid_file": "/Users/rms/work/GitHub/only-decoder/train_data/valid.jsonl",
+  "train": {
+    "rows": 97431,
+    "labeled_rows": 97431,
+    "command_distribution": {
+      "USER_BY_LOGIN": 56594,
+      "DELIVERY_VEHICLE": 40037,
+      "TOP_IP_BY_PAGE": 800
+    },
+    "system_distribution": {
+      "OMS": 57394,
+      "TMS": 40037
+    },
+    "state_distribution": {
+      "PAGE": 47937,
+      "done": 38486,
+      "LOGIN": 8657,
+      "QUERY": 1729,
+      "EVENT": 600,
+      "ready": 12,
+      "running": 10
+    },
+    "domain_distribution": {
+      "oms": 1700,
+      "transportation": 1529
+    },
+    "message_length_bucket_distribution": {
+      "0-19": 38508,
+      "100-199": 604,
+      "20-49": 162,
+      "50-99": 58157
+    }
+  },
+  "valid": {
+    "rows": 630,
+    "labeled_rows": 630,
+    "command_distribution": {
+      "DELIVERY_VEHICLE": 519,
+      "USER_BY_LOGIN": 111
+    },
+    "system_distribution": {
+      "TMS": 519,
+      "OMS": 111
+    },
+    "state_distribution": {
+      "done": 413,
+      "QUERY": 95,
+      "PAGE": 66,
+      "LOGIN": 45,
+      "running": 9,
+      "ready": 2
+    },
+    "domain_distribution": {
+      "transportation": 95
+    },
+    "message_length_bucket_distribution": {
+      "0-19": 424,
+      "20-49": 22,
+      "50-99": 184
+    }
+  }
+}
